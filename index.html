@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Video Feed</title>
+
+<style>
+body{
+    margin:0;
+    background:#0f0f0f;
+    font-family:Arial;
+    color:white;
+}
+.grid{
+    display:grid;
+    grid-template-columns:1fr;
+    gap:10px;
+    padding:10px;
+    padding-bottom:70px;
+}
+.video-card{
+    display:flex;
+    gap:10px;
+    background:#1a1a1a;
+    padding:8px;
+    border-radius:12px;
+    cursor:pointer;
+}
+.thumb{
+    position:relative;
+    width:140px;
+    flex-shrink:0;
+}
+.thumb video{
+    width:100%;
+    height:90px;
+    object-fit:cover;
+    border-radius:10px;
+}
+.play-overlay{
+    position:absolute;
+    top:50%;
+    left:50%;
+    transform:translate(-50%,-50%);
+    font-size:26px;
+    background:rgba(0,0,0,0.6);
+    border-radius:50%;
+    padding:6px 10px;
+}
+.title{
+    font-size:13px;
+    color:#ddd;
+    line-height:1.3;
+}
+.navbar{
+    position:fixed;
+    bottom:0;
+    left:0;
+    width:100%;
+    background:#111;
+    display:flex;
+    justify-content:space-around;
+    padding:10px 0;
+    border-top:1px solid #222;
+}
+.navbar div{
+    font-size:12px;
+    opacity:0.7;
+}
+.navbar .active{
+    opacity:1;
+    font-weight:bold;
+}
+#player{
+    position:fixed;
+    top:0;
+    left:0;
+    width:100%;
+    height:100%;
+    background:black;
+    display:none;
+    justify-content:center;
+    align-items:center;
+    z-index:999;
+    flex-direction:column;
+}
+#player video{
+    width:95%;
+    max-width:500px;
+}
+#closeBtn{
+    position:absolute;
+    top:15px;
+    right:20px;
+    font-size:30px;
+    cursor:pointer;
+}
+</style>
+</head>
+
+<body>
+
+<div id="app" class="grid"></div>
+
+<div class="navbar">
+    <div class="active">Home</div>
+    <div>Trending</div>
+    <div>Profile</div>
+</div>
+
+<div id="player">
+    <span id="closeBtn">✕</span>
+    <video id="mainVideo" controls playsinline></video>
+</div>
+
+<script>
+const ad = "https://otieu.com/4/10005133";
+
+const videoList = [
+  ["https://cdn.videy.co/jNHzcGj01.mp4","PVNY4 T4NT3 B3S4R B4NG3T"],
+  ["https://cdn.videy.co/9sxTbvND1.mp4","C3W3 BVL3 PVT1H"],
+  ["https://cdn.videy.co/nYavabayl.mp4","4Y4N9 J4G0 G0Y4N9"],
+  ["https://cdn.videy.co/rr767xZC1.mp4","LC BVLV L3B4T K3 EN4K4N"],
+  ["https://cdn.videy.co/zbrm2eNh1.mp4","M41N S4M4 4NJ1NG"],
+  ["https://cdn.videy.co/1PHgTPCG1.mp4","PVL4N9 T3R4W3H L4NGSVNG M41N"],
+  ["https://cdn.videy.co/0jr8mOoy1.mp4","M41N G4Y4 T3RB4RV 4S1K"],
+  ["https://cdn.videy.co/QiJ0GkRg1.mp4","C0SPL4Y B4JV P3L4Y4N"],
+  ["https://cdn.videy.co/KELmoUpt1.mp4","B0DY B3S4R S4M4 BR0ND0NG"],
+  ["https://cdn.videy.co/WA89iHzW1.mp4","C3W3 K3C4M4T4 L1V3"],
+  ["https://cdn.videy.co/2ulHXHsS1.mp4","BR0ND0NG SVK4 NG3NT0D"],
+  ["https://cdn.videy.co/v3JlrFpb1.mp4","4Y4NG SVK4 NG3M0T S0S1S"],
+  ["https://cdn.videy.co/Z1mh1mQw1.mp4","NG3MVT1N S4MB1L N0NT0N"],
+  ["https://cdn.videy.co/nr6lFec41.mp4","D1 T3LP0N M4M4 T3T4P L4NJVT NG3NT0D"],
+  ["https://cdn.videy.co/VHuZIMVy1.mp4","NY3MP4T1N R3M3S T3T3"],
+  ["https://cdn.videy.co/SPmEVzzA1.mp4","C3W3 H1J4B S3XS1"],
+  ["https://cdn.videy.co/PlXHF6Qc1.mp4","Suk4 m4inin Puny4 1bv"],
+  ["https://cdn.videy.co/YUe34tZf1.mp4","P4NJ4N9 B4N93T PVNY4 C0W0KV"],
+  ["https://cdn.videy.co/hZZvpK201.mp4","N93W3 C3W3 K4C4M4T4 C4NT1K"],
+  ["https://cdn.videy.co/wzTeyBFV1.mp4","D1 SVRVH S3P0N9 S4M4 K4K4K"],
+  ["https://cdn.videy.co/SzK87EW71.mp4","K4T4 4Y4N9 S4MB1L D1 R3K4M"],
+  ["https://cdn.videy.co/h2Bg45r71.mp4","C3W3NY4 K33N4K4N S4M4 PVNY4 KV"],
+  ["https://cdn.videy.co/4LiKbyr01.mp4","K0LPR1 N93W3 2 C3W3 C4NT1K"],
+  ["https://cdn.videy.co/fA2Y9R131.mp4","G3NJ0T J4ND4 S3B3L4H RVM4H"],
+  ["https://cdn.videy.co/BcdZg2sa1.mp4","P4C4R J4G0 B4N93T S04L S3P0N9"],
+  ["https://cdn.videy.co/ptZRgTKP1.mp4","V1C13S S4M4 P4C4R M4H GR4T1S"],
+  ["https://cdn.videy.co/se3UlRYE1.mp4","4D3K C4NT1K H4RVS NVRVT S4MR KK"],
+  ["https://cdn.videy.co/Uad6hdhH1.mp4","K4S1H P4P 4Y4NG B14R C3M4NG4T"],
+  ["https://cdn.videy.co/PQy1gXdx1.mp4","—"]
+];
+
+const app = document.getElementById("app");
+const player = document.getElementById("player");
+const mainVideo = document.getElementById("mainVideo");
+const closeBtn = document.getElementById("closeBtn");
+
+videoList.forEach(v => {
+
+    const card = document.createElement("div");
+    card.className = "video-card";
+
+    const thumb = document.createElement("div");
+    thumb.className = "thumb";
+
+    const vid = document.createElement("video");
+    vid.src = v[0];
+    vid.muted = true;
+    vid.preload = "metadata";
+    vid.playsInline = true;
+
+    const play = document.createElement("div");
+    play.className = "play-overlay";
+    play.innerHTML = "▶";
+
+    thumb.appendChild(vid);
+    thumb.appendChild(play);
+
+    const title = document.createElement("div");
+    title.className = "title";
+    title.innerHTML = v[1];
+
+    card.appendChild(thumb);
+    card.appendChild(title);
+    app.appendChild(card);
+
+    card.onclick = () => {
+        player.style.display = "flex";
+        mainVideo.src = v[0];
+        mainVideo.currentTime = 0;
+        mainVideo.play();
+
+        // IKLAN AWAL (KLIK)
+        window.open(ad,"_blank");
+
+        let ad20 = false;
+        let ad40 = false;
+
+        mainVideo.ontimeupdate = () => {
+            const t = Math.floor(mainVideo.currentTime);
+
+            if(t >= 20 && !ad20){
+                ad20 = true;
+                window.open(ad,"_blank");
+            }
+
+            if(t >= 40 && !ad40){
+                ad40 = true;
+                window.open(ad,"_blank");
+            }
+        };
+    };
+});
+
+closeBtn.onclick = () => {
+    mainVideo.pause();
+    mainVideo.src = "";
+    player.style.display = "none";
+};
+</script>
+
+</body>
+</html>
